@@ -5,6 +5,9 @@
 #include <stdint.h>
 
 #include <array>
+#include <initializer_list>
+#include <memory>
+#include <vector>
 
 namespace ShuffleLinearCongruentInner {
 class CarryData;
@@ -29,18 +32,41 @@ private:
         uint32_t data;
     };
 };
+
+class shuffleBase;
+
 } // namespace ShuffleLinearCongruentInner
 
 class ShuffleLinearCongruent {
 public:
-    ShuffleLinearCongruent(uint32_t seed = 12345);
-    ~ShuffleLinearCongruent();
+    enum class SHUFFLE {
+        PRIVATE, // 独立
+        PROCESS, // Processで共有
+        SYSTEM   // Systemで共有
+    };
+
+public:
+    ShuffleLinearCongruent(uint32_t seed = 12345,
+                           SHUFFLE type = SHUFFLE::PRIVATE);
+    ShuffleLinearCongruent(SHUFFLE type = SHUFFLE::PRIVATE,
+                           uint32_t seed = 12345)
+        : ShuffleLinearCongruent(seed, type) {}
+    ShuffleLinearCongruent(const std::initializer_list<uint32_t> &seed,
+                           SHUFFLE type = SHUFFLE::PRIVATE);
+    ShuffleLinearCongruent(const std::initializer_list<uint32_t> &seed,
+                           const std::initializer_list<uint8_t> &shuffle,
+                           SHUFFLE type = SHUFFLE::PRIVATE);
+    virtual ~ShuffleLinearCongruent();
     uint64_t get();
     operator uint64_t() { return get(); }
 
 private:
+    void setState(const std::initializer_list<uint32_t> &seed);
+
+private:
     std::array<ShuffleLinearCongruentInner::bitState, 64> bitState;
-    uint8_t thrTbl[256];
+    // uint8_t thrTbl[256];
+    std::unique_ptr<ShuffleLinearCongruentInner::shuffleBase> shuffle;
     uint64_t lastCarry = 0;
 };
 
